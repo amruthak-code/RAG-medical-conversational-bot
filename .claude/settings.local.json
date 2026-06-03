@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:8000/api/history/P001)",
+      "Bash(python3 -m json.tool)",
+      "Bash(docker-compose down *)",
+      "Bash(docker-compose up *)",
+      "Bash(curl -s http://localhost:8000/api/health)"
+    ]
+  }
+}

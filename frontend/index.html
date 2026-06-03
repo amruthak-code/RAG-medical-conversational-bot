@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post-Discharge Care Agent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #2563eb;
+      --blue-l: #eff6ff;
+      --green:  #16a34a;
+      --yellow: #ca8a04;
+      --red:    #dc2626;
+      --gray-1: #f8fafc;
+      --gray-2: #e2e8f0;
+      --gray-3: #94a3b8;
+      --gray-4: #475569;
+      --dark:   #0f172a;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--gray-1);
+      color: var(--dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--blue);
+      color: #fff;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+
+    header svg { flex-shrink: 0; }
+
+    header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.3px; }
+    header p  { font-size: .8rem; opacity: .8; }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+      gap: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 28px;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: var(--gray-4); text-transform: uppercase; letter-spacing: .5px; font-size: .75rem; }
+
+    /* Upload */
+    .upload-area {
+      border: 2px dashed var(--gray-2);
+      border-radius: 8px;
+      padding: 36px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .upload-area:hover, .upload-area.drag-over {
+      border-color: var(--blue);
+      background: var(--blue-l);
+    }
+    .upload-area input[type="file"] { display: none; }
+    .upload-area .icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .upload-area p { color: var(--gray-3); font-size: .9rem; }
+    .upload-area strong { color: var(--blue); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: none;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-primary:hover:not(:disabled) { opacity: .88; }
+
+    .upload-actions { margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+    #file-name { font-size: .85rem; color: var(--gray-4); }
+
+    .status-msg {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: .875rem;
+      display: none;
+    }
+    .status-msg.success { background: #f0fdf4; color: var(--green); border: 1px solid #bbf7d0; }
+    .status-msg.error   { background: #fef2f2; color: var(--red);   border: 1px solid #fecaca; }
+
+    /* Patient selector */
+    #patient-section { display: none; }
+
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--gray-2);
+      border-radius: 8px;
+      font-size: .9rem;
+      background: #fff;
+      color: var(--dark);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      cursor: pointer;
+    }
+    select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+    /* Chat */
+    #chat-section { display: none; }
+
+    .chat-window {
+      height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 4px 2px;
+      margin-bottom: 16px;
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 80%;
+    }
+    .msg.user  { align-self: flex-end; align-items: flex-end; }
+    .msg.agent { align-self: flex-start; align-items: flex-start; }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: .9rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .msg.user  .bubble { background: var(--blue); color: #fff; border-bottom-right-radius: 4px; }
+    .msg.agent .bubble { background: var(--gray-1); border: 1px solid var(--gray-2); border-bottom-left-radius: 4px; }
+
+    .triage-badge {
+      margin-top: 5px;
+      font-size: .72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      display: inline-block;
+    }
+    .triage-1 { background: #dcfce7; color: var(--green); }
+    .triage-2 { background: #fef9c3; color: var(--yellow); }
+    .triage-3 { background: #fee2e2; color: var(--red); }
+
+    .chat-input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-input-row input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--gray-2);
+      border-radius: 8px;
+      font-size: .9rem;
+    }
+    .chat-input-row input:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+    .typing {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      background: var(--gray-1);
+      border: 1px solid var(--gray-2);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+    }
+    .typing span {
+      width: 7px; height: 7px;
+      background: var(--gray-3);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: .2s; }
+    .typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40%           { transform: translateY(-6px); }
+    }
+
+    footer {
+      text-align: center;
+      padding: 16px;
+      font-size: .78rem;
+      color: var(--gray-3);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="32" height="32" rx="8" fill="white" fill-opacity=".15"/>
+    <path d="M16 7v18M7 16h18" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  </svg>
+  <div>
+    <h1>Post-Discharge Care Agent</h1>
+    <p>AI-powered post-operative support for your patients</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- Step 1: Upload -->
+  <div class="card">
+    <h2>Step 1 — Upload Patient Data</h2>
+    <label class="upload-area" id="drop-zone">
+      <input type="file" id="file-input" accept=".xlsx,.xls" />
+      <div class="icon">📋</div>
+      <p>Drag &amp; drop your Excel file here, or <strong>click to browse</strong></p>
+      <p style="margin-top:6px;font-size:.78rem;">Accepts .xlsx / .xls with 15 required columns</p>
+    </label>
+    <div class="upload-actions">
+      <button class="btn btn-primary" id="upload-btn" disabled>
+        <span>Upload &amp; Process</span>
+      </button>
+      <span id="file-name">No file selected</span>
+    </div>
+    <div class="status-msg" id="upload-status"></div>
+  </div>
+
+  <!-- Step 2: Select patient -->
+  <div class="card" id="patient-section">
+    <h2>Step 2 — Select Patient</h2>
+    <select id="patient-select">
+      <option value="">— choose a patient ID —</option>
+    </select>
+  </div>
+
+  <!-- Step 3: Chat -->
+  <div class="card" id="chat-section">
+    <h2>Step 3 — Ask a Question</h2>
+    <div class="chat-window" id="chat-window"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Describe your symptoms or ask a question…" />
+      <button class="btn btn-primary" id="send-btn">Send</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>Post-Discharge Care Agent &mdash; Milestone 2</footer>
+
+<script>
+  const API = '';  // same origin
+
+  // ── Upload ────────────────────────────────────────────────────────────────
+  const fileInput   = document.getElementById('file-input');
+  const dropZone    = document.getElementById('drop-zone');
+  const uploadBtn   = document.getElementById('upload-btn');
+  const fileNameEl  = document.getElementById('file-name');
+  const uploadStatus = document.getElementById('upload-status');
+
+  let selectedFile = null;
+
+  fileInput.addEventListener('change', () => {
+    selectedFile = fileInput.files[0] || null;
+    fileNameEl.textContent = selectedFile ? selectedFile.name : 'No file selected';
+    uploadBtn.disabled = !selectedFile;
+  });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      selectedFile = file;
+      fileInput.files = e.dataTransfer.files;
+      fileNameEl.textContent = file.name;
+      uploadBtn.disabled = false;
+    }
+  });
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    uploadBtn.disabled = true;
+    uploadBtn.querySelector('span').textContent = 'Processing…';
+    setStatus('', '');
+
+    const form = new FormData();
+    form.append('file', selectedFile);
+
+    try {
+      const res = await fetch(`${API}/api/upload`, { method: 'POST', body: form });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.detail || 'Upload failed');
+
+      setStatus(`success`, `✓ Uploaded ${data.count} patient(s): ${data.patients.join(', ')}`);
+      populatePatients(data.patients);
+    } catch (err) {
+      setStatus('error', `✗ ${err.message}`);
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.querySelector('span').textContent = 'Upload & Process';
+    }
+  });
+
+  function setStatus(type, msg) {
+    uploadStatus.className = `status-msg ${type}`;
+    uploadStatus.textContent = msg;
+    uploadStatus.style.display = msg ? 'block' : 'none';
+  }
+
+  // ── Patient selector ──────────────────────────────────────────────────────
+  const patientSection = document.getElementById('patient-section');
+  const patientSelect  = document.getElementById('patient-select');
+  const chatSection    = document.getElementById('chat-section');
+
+  function populatePatients(ids) {
+    patientSelect.innerHTML = '<option value="">— choose a patient ID —</option>';
+    ids.forEach(id => {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = id;
+      patientSelect.appendChild(opt);
+    });
+    patientSection.style.display = 'block';
+    patientSection.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  let currentSessionId = null;
+
+  patientSelect.addEventListener('change', async () => {
+    if (patientSelect.value) {
+      currentSessionId = patientSelect.value;
+      chatSection.style.display = 'block';
+      clearChat();
+      chatSection.scrollIntoView({ behavior: 'smooth' });
+      await loadChatHistory(patientSelect.value);
+    } else {
+      currentSessionId = null;
+      chatSection.style.display = 'none';
+    }
+  });
+
+  async function loadChatHistory(patientId) {
+    try {
+      const res = await fetch(`${API}/api/history/${patientId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.messages || data.messages.length === 0) return;
+
+      const divider = document.createElement('div');
+      divider.style.cssText = 'text-align:center;font-size:.75rem;color:var(--gray-3);padding:8px 0;';
+      divider.textContent = `— Previous conversation (${data.messages.length} messages) —`;
+      chatWindow.appendChild(divider);
+
+      data.messages.forEach(msg => {
+        const role = msg.role === 'human' ? 'user' : 'agent';
+        appendMsg(role, msg.content);
+      });
+
+      const divider2 = document.createElement('div');
+      divider2.style.cssText = 'text-align:center;font-size:.75rem;color:var(--gray-3);padding:8px 0;border-bottom:1px solid var(--gray-2);margin-bottom:8px;';
+      divider2.textContent = '— Continue below —';
+      chatWindow.appendChild(divider2);
+
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    } catch (_) {}
+  }
+
+  // ── Chat ──────────────────────────────────────────────────────────────────
+  const chatWindow = document.getElementById('chat-window');
+  const chatInput  = document.getElementById('chat-input');
+  const sendBtn    = document.getElementById('send-btn');
+
+  function clearChat() {
+    chatWindow.innerHTML = '';
+  }
+
+  function appendMsg(role, text, meta = null) {
+    const msg = document.createElement('div');
+    msg.className = `msg ${role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    msg.appendChild(bubble);
+
+    if (meta && role === 'agent') {
+      const badge = document.createElement('span');
+      badge.className = `triage-badge triage-${meta.level}`;
+      badge.textContent = `${meta.label}`;
+      msg.appendChild(badge);
+
+      if (meta.alertSent) {
+        const alert = document.createElement('span');
+        alert.className = 'triage-badge triage-3';
+        alert.textContent = '⚠ Emergency alert sent';
+        alert.style.marginTop = '4px';
+        msg.appendChild(alert);
+      }
+
+      if (meta.sources && meta.sources.length) {
+        const src = document.createElement('div');
+        src.style.cssText = 'margin-top:5px;font-size:.7rem;color:var(--gray-3);';
+        const labels = meta.sources.map(s =>
+          s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        );
+        src.textContent = `📄 Source: ${labels.join(', ')}`;
+        msg.appendChild(src);
+      }
+    }
+
+    chatWindow.appendChild(msg);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return msg;
+  }
+
+  function showTyping() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg agent';
+    wrapper.id = 'typing-indicator';
+    wrapper.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
+    chatWindow.appendChild(wrapper);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+
+  function removeTyping() {
+    document.getElementById('typing-indicator')?.remove();
+  }
+
+  async function sendMessage() {
+    const text = chatInput.value.trim();
+    const patientId = patientSelect.value;
+    if (!text || !patientId || !currentSessionId) return;
+
+    chatInput.value = '';
+    sendBtn.disabled = true;
+    appendMsg('user', text);
+    showTyping();
+
+    try {
+      const res = await fetch(`${API}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patient_id: patientId, session_id: currentSessionId, message: text }),
+      });
+      const data = await res.json();
+      removeTyping();
+
+      if (!res.ok) throw new Error(data.detail || 'Chat error');
+
+      appendMsg('agent', data.response, {
+        level: data.triage_level,
+        label: data.triage_label,
+        alertSent: data.alert_sent,
+        sources: data.sources || [],
+      });
+    } catch (err) {
+      removeTyping();
+      appendMsg('agent', `Error: ${err.message}`);
+    } finally {
+      sendBtn.disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+</script>
+</body>
+</html>
